@@ -2,7 +2,7 @@
 // chamada é best-effort: se faltar GEMINI_API_KEY ou a chamada falhar,
 // retorna null e quem chamou cai pro conteúdo padrão (template).
 
-const GEMINI_MODEL = "gemini-3.5-flash";
+const GEMINI_MODEL = "gemini-3.8-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 interface GeminiPart {
@@ -33,7 +33,14 @@ async function callGemini(
         ...(systemInstruction
           ? { systemInstruction: { parts: [{ text: systemInstruction }] } }
           : {}),
-        generationConfig: { temperature: 0.9, maxOutputTokens: 600 },
+        // thinkingLevel "LOW" evita que o modelo gaste boa parte do
+        // maxOutputTokens "pensando" (a família Gemini 3 pensa por padrão),
+        // o que cortava a resposta visível pela metade antes desse ajuste.
+        generationConfig: {
+          temperature: 0.9,
+          maxOutputTokens: 800,
+          thinkingConfig: { thinkingLevel: "LOW" },
+        },
       }),
       // Evita que uma resposta lenta trave a request inteira.
       signal: AbortSignal.timeout(15000),
