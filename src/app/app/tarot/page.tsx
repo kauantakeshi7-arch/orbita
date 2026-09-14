@@ -15,6 +15,7 @@ interface DrawResponse {
   id: string;
   spread: "single" | "three" | "celtic-cross";
   cards: DrawnCard[];
+  aiReading: string | null;
 }
 
 const POSITION_LABELS = ["Passado", "Presente", "Futuro"];
@@ -90,6 +91,12 @@ export default function TarotPage() {
               <p className="text-ink-muted leading-relaxed">
                 {dailyDraw.cards[0].isReversed ? dailyDraw.cards[0].reversed : dailyDraw.cards[0].upright}
               </p>
+              {dailyDraw.aiReading && (
+                <div className="mt-4 pt-4 border-t border-line">
+                  <p className="font-mono-label text-xs text-accent mb-2">leitura da órbita · por IA</p>
+                  <p className="text-ink-muted leading-relaxed">{dailyDraw.aiReading}</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -121,6 +128,12 @@ export default function TarotPage() {
                 </p>
               </div>
             ))}
+          </div>
+        )}
+        {threeDraw?.aiReading && (
+          <div className="mt-4 rounded-xl border border-line bg-surface p-5">
+            <p className="font-mono-label text-xs text-accent mb-2">leitura da órbita · por IA</p>
+            <p className="text-ink-muted leading-relaxed">{threeDraw.aiReading}</p>
           </div>
         )}
       </section>

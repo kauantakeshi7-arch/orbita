@@ -197,3 +197,70 @@ export async function listDraws(userId: string): Promise<TarotDrawRecord[]> {
   );
   return rows.map(rowToDraw);
 }
+
+// ---------- Conteúdo gerado por IA (cache) ----------
+
+export async function getAiContent(
+  userId: string,
+  kind: string,
+  refKey: string
+): Promise<string | null> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT content FROM ai_content WHERE user_id = $1 AND kind = $2 AND ref_key = $3`,
+    [userId, kind, refKey]
+  );
+  return rows[0]?.content ?? null;
+}
+
+export async function saveAiContent(
+  userId: string,
+  kind: string,
+  refKey: string,
+  content: string
+): Promise<void> {
+  const pool = getPool();
+  await pool.query(
+    `INSERT INTO ai_content (id, user_id, kind, ref_key, content)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (user_id, kind, ref_key) DO UPDATE SET content = EXCLUDED.content`,
+    [randomUUID(), userId, kind, refKey, content]
+  );
+}
+
+// ---------- Chat sobre o mapa ----------
+
+export interface ChatMessageRecord {
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+}
+
+export async function listChatMessages(
+  userId: string,
+  limit = 30
+): Promise<ChatMessageRecord[]> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT role, content, created_at FROM chat_messages
+     WHERE user_id = $1 ORDER BY created_at ASC LIMIT $2`,
+    [userId, limit]
+  );
+  return rows.map((r) => ({
+    role: r.role as "user" | "assistant",
+    content: r.content as string,
+    createdAt: (r.created_at as Date).toISOString(),
+  }));
+}
+
+export async function addChatMessage(
+  userId: string,
+  role: "user" | "assistant",
+  content: string
+): Promise<void> {
+  const pool = getPool();
+  await pool.query(
+    `INSERT INTO chat_messages (id, user_id, role, content) VALUES ($1, $2, $3, $4)`,
+    [randomUUID(), userId, role, content]
+  );
+}

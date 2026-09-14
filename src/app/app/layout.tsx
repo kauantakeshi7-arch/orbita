@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { href: "/app", label: "Início" },
   { href: "/app/mapa", label: "Mapa" },
   { href: "/app/tarot", label: "Tarot" },
+  { href: "/app/chat", label: "Chat" },
   { href: "/app/diario", label: "Diário" },
   { href: "/app/perfil", label: "Perfil" },
 ];

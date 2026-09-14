@@ -48,6 +48,27 @@ CREATE TABLE IF NOT EXISTS tarot_draws (
 CREATE INDEX IF NOT EXISTS idx_tarot_draws_user ON tarot_draws(user_id);
 CREATE INDEX IF NOT EXISTS idx_tarot_draws_user_date_spread
   ON tarot_draws(user_id, date, spread);
+
+CREATE TABLE IF NOT EXISTS ai_content (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  ref_key TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, kind, ref_key)
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_user
+  ON chat_messages(user_id, created_at);
 `;
 
 try {

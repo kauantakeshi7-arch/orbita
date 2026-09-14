@@ -67,6 +67,30 @@ CREATE TABLE IF NOT EXISTS tarot_draws (
 CREATE INDEX IF NOT EXISTS idx_tarot_draws_user ON tarot_draws(user_id);
 CREATE INDEX IF NOT EXISTS idx_tarot_draws_user_date_spread
   ON tarot_draws(user_id, date, spread);
+
+-- Conteúdo gerado por IA (horóscopo personalizado, leitura de tarot),
+-- cacheado por usuário pra não chamar a API do Gemini de novo toda hora.
+CREATE TABLE IF NOT EXISTS ai_content (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  ref_key TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, kind, ref_key)
+);
+
+-- Histórico do chat "pergunte sobre seu mapa".
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_user
+  ON chat_messages(user_id, created_at);
 `;
 
 /** Cria as tabelas se ainda não existirem. Idempotente — seguro de chamar

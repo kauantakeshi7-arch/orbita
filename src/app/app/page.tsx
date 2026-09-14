@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getBirthProfile, getStreak, getTodayDraw } from "@/lib/repo";
 import { computeNatalChart } from "@/lib/astrology";
-import { buildDailyHoroscope } from "@/lib/horoscope";
+import { getPersonalizedHoroscope } from "@/lib/horoscope";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -39,7 +39,7 @@ export default async function DashboardPage() {
   const [streak, todayDraw, horoscope] = await Promise.all([
     getStreak(user.id),
     getTodayDraw(user.id),
-    Promise.resolve(buildDailyHoroscope(sun.sign)),
+    getPersonalizedHoroscope(user.id, chart),
   ]);
 
   return (
@@ -60,7 +60,12 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="rounded-xl border border-line bg-surface p-6">
-          <p className="font-mono-label text-xs text-ink-dim mb-2">horóscopo de hoje</p>
+          <p className="font-mono-label text-xs text-ink-dim mb-2 flex items-center gap-2">
+            horóscopo de hoje
+            {horoscope.aiGenerated && (
+              <span className="text-accent normal-case font-sans">· por IA</span>
+            )}
+          </p>
           <p className="text-ink-muted leading-relaxed">{horoscope.text}</p>
         </div>
 

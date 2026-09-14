@@ -20,7 +20,9 @@ const { Origin, Horoscope } = pkg as unknown as {
   }) => { CelestialBodies: Record<string, { Sign: { key: string } }> };
 };
 
-import { SIGN_LABELS_PT } from "./astrology";
+import { SIGN_LABELS_PT, type NatalChart } from "./astrology";
+import { askGemini } from "./ai";
+import { getAiContent, saveAiContent } from "./repo";
 
 const MOON_MOOD_PT: Record<string, string> = {
   aries: "o dia pede iniciativa: comece antes de pensar demais",
@@ -94,4 +96,56 @@ export function buildDailyHoroscope(sunSign: string): DailyHoroscope {
   const sunSignLabel = SIGN_LABELS_PT[sunSign] ?? sunSign;
   const text = `Com a Lua em ${moonSignLabel} hoje, ${moodLine}. Pra você, de Sol em ${sunSignLabel}, isso tende a ${flavorLine}`;
   return { moonSign, moonSignLabel, moodLine, sunSign, sunSignLabel, flavorLine, text };
+}
+
+function todayDateKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+}
+
+const HOROSCOPE_SYSTEM_INSTRUCTION = `Você escreve o horóscopo diário do Órbita, um app de astrologia moderno e direto, sem clichê místico ("os astros se alinham", "o universo conspira"). Tom: caloroso, específico, um pouco informal — como uma amiga que manja de astrologia de verdade explicando o dia. Português do Brasil. Responda só com o texto do horóscopo, 2 a 4 frases, sem saudação, sem markdown, sem aspas.`;
+
+/**
+ * Horóscopo personalizado: tenta gerar com IA (Gemini) a partir do mapa
+ * real da pessoa, cacheado por dia. Se a IA falhar ou a chave não estiver
+ * configurada, cai pro texto padrão (template determinístico), que fica
+ * pronto na hora e nunca falha.
+ */
+export async function getPersonalizedHoroscope(
+  userId: string,
+  chart: NatalChart
+): Promise<DailyHoroscope & { aiGenerated: boolean }> {
+  const sun = chart.planets.find((p) => p.key === "sun");
+  const moon = chart.planets.find((p) => p.key === "moon");
+  const fallback = buildDailyHoroscope(sun?.sign ?? "aries");
+
+  const dateKey = todayDateKey();
+  const cached = await getAiContent(userId, "horoscope", dateKey);
+  if (cached) {
+    return { ...fallback, text: cached, aiGenerated: true };
+  }
+
+  const topAspects = chart.aspects
+    .slice(0, 4)
+    .map((a) => `${a.aLabel} ${a.typeLabel.toLowerCase()} ${a.bLabel}`)
+    .join("; ");
+
+  const prompt = `Dados do mapa astral da pessoa:
+- Sol em ${fallback.sunSignLabel}
+- Lua (hoje, em trânsito) em ${fallback.moonSignLabel}
+- Ascendente em ${SIGN_LABELS_PT[chart.ascendant.sign] ?? chart.ascendant.sign}
+${moon ? `- Lua natal em ${SIGN_LABELS_PT[moon.sign] ?? moon.sign}` : ""}
+${topAspects ? `- Aspectos principais do mapa natal: ${topAspects}` : ""}
+
+Escreva o horóscopo de hoje pra essa pessoa.`;
+
+  const aiText = await askGemini(prompt, HOROSCOPE_SYSTEM_INSTRUCTION);
+  if (!aiText) {
+    return { ...fallback, aiGenerated: false };
+  }
+
+  await saveAiContent(userId, "horoscope", dateKey, aiText);
+  return { ...fallback, text: aiText, aiGenerated: true };
 }

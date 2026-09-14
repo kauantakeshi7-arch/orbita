@@ -3,12 +3,15 @@ import { getCurrentUser } from "@/lib/auth";
 import { createDraw, getTodayDraw } from "@/lib/repo";
 import { drawRandomCards } from "@/lib/tarot";
 import { getCardById } from "@/lib/tarot-data";
+import { getPersonalizedTarotReading } from "@/lib/tarot-ai";
 import { drawSchema } from "@/lib/validation";
 import type { TarotDrawRecord } from "@/lib/types";
 
-function serializeDraw(draw: TarotDrawRecord) {
+async function serializeDraw(userId: string, draw: TarotDrawRecord) {
+  const aiReading = await getPersonalizedTarotReading(userId, draw);
   return {
     ...draw,
+    aiReading,
     cards: draw.cardIds.map((id, i) => ({
       ...getCardById(id),
       isReversed: draw.reversed[i],
@@ -22,7 +25,7 @@ export async function GET() {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
   const draw = await getTodayDraw(user.id);
-  return NextResponse.json({ draw: draw ? serializeDraw(draw) : null });
+  return NextResponse.json({ draw: draw ? await serializeDraw(user.id, draw) : null });
 }
 
 export async function POST(request: Request) {
@@ -40,11 +43,11 @@ export async function POST(request: Request) {
   if (parsed.data.spread === "single") {
     const existing = await getTodayDraw(user.id);
     if (existing) {
-      return NextResponse.json({ draw: serializeDraw(existing) });
+      return NextResponse.json({ draw: await serializeDraw(user.id, existing) });
     }
   }
 
   const { cardIds, reversed } = drawRandomCards(parsed.data.spread);
   const draw = await createDraw({ userId: user.id, spread: parsed.data.spread, cardIds, reversed });
-  return NextResponse.json({ draw: serializeDraw(draw) });
+  return NextResponse.json({ draw: await serializeDraw(user.id, draw) });
 }

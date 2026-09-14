@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getBirthProfile } from "@/lib/repo";
 import { computeNatalChart } from "@/lib/astrology";
-import { buildDailyHoroscope } from "@/lib/horoscope";
+import { getPersonalizedHoroscope } from "@/lib/horoscope";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -26,7 +26,6 @@ export async function GET() {
     latitude: profile.latitude,
     longitude: profile.longitude,
   });
-  const sun = chart.planets.find((p) => p.key === "sun");
-  const horoscope = buildDailyHoroscope(sun?.sign ?? "aries");
+  const horoscope = await getPersonalizedHoroscope(user.id, chart);
   return NextResponse.json({ horoscope });
 }
