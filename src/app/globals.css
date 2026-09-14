@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+:root {
+  --ground: #0c0e18;
+  --surface: #151726;
+  --surface-2: #1a1c2e;
+  --line: #2b2e48;
+  --ink: #f1f2f8;
+  --ink-muted: #aeb1c7;
+  --ink-dim: #7c7f97;
+  --accent: #8fb4ff;
+  --accent-2: #f0a868;
+  --good: #6fc79a;
+  --danger: #f16565;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --ground: #f7f5ef;
+    --surface: #ffffff;
+    --surface-2: #f0ede4;
+    --line: #ddd8c9;
+    --ink: #15161f;
+    --ink-muted: #5b5e70;
+    --ink-dim: #8a8d9e;
+    --accent: #3457c9;
+    --accent-2: #b0631e;
+    --good: #3a7d5c;
+    --danger: #c2483f;
+  }
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-dim: var(--ink-dim);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-good: var(--good);
+  --color-danger: var(--danger);
+
+  --font-display: "Unbounded", "Arial Black", sans-serif;
+  --font-body: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Space Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark light;
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.55;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+}
+
+.font-mono-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--ground);
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+a {
+  color: inherit;
+}
