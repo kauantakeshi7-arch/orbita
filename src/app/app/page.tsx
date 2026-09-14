@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { getBirthProfile, getStreak, getTodayDraw } from "@/lib/repo";
+import { getBirthProfile, getStreak, getTodayDraw, listDraws, listChatMessages } from "@/lib/repo";
 import { computeNatalChart } from "@/lib/astrology";
 import { getPersonalizedHoroscope } from "@/lib/horoscope";
+import { computeXp, computeLevel, computeCosmicWeather, ACHIEVEMENTS, type UserStats } from "@/lib/gamification";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -36,26 +37,80 @@ export default async function DashboardPage() {
   const sun = chart.planets.find((p) => p.key === "sun")!;
   const moon = chart.planets.find((p) => p.key === "moon")!;
 
-  const [streak, todayDraw, horoscope] = await Promise.all([
+  const [streak, todayDraw, horoscope, draws, chatMessages] = await Promise.all([
     getStreak(user.id),
     getTodayDraw(user.id),
     getPersonalizedHoroscope(user.id, chart),
+    listDraws(user.id),
+    listChatMessages(user.id, 200),
   ]);
+
+  const stats: UserStats = {
+    streak,
+    totalDraws: draws.length,
+    chatMessages: chatMessages.filter((m) => m.role === "user").length,
+    hasChart: true,
+  };
+  const xp = computeXp(stats);
+  const { level, progress, xpForNext } = computeLevel(xp);
+  const unlockedAchievements = ACHIEVEMENTS.filter((a) => a.unlocked(stats, level));
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const weather = computeCosmicWeather(user.id, todayKey);
 
   return (
     <div className="flex flex-col gap-8">
       <div>
         <p className="font-mono-label text-xs text-ink-dim mb-2">olá, {user.displayName}</p>
-        <h1 className="text-3xl font-bold mb-4">
-          {sun.signGlyph} {sun.signLabel} · {moon.signGlyph} {moon.signLabel} · {chart.ascendant.signGlyph}{" "}
-          {chart.ascendant.signLabel} no Ascendente
+        <h1 className="text-3xl font-bold mb-1">
+          <span className="text-gradient">
+            {sun.signGlyph} {sun.signLabel} · {moon.signGlyph} {moon.signLabel} · {chart.ascendant.signGlyph}{" "}
+            {chart.ascendant.signLabel} no Ascendente
+          </span>
         </h1>
+        <p className="text-ink-dim text-sm">o universo conspira a seu favor</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatTile label="sequência de tarot" value={`${streak} dia${streak === 1 ? "" : "s"}`} />
-        <StatTile label="Sol" value={`${sun.signGlyph} ${sun.signLabel}`} />
-        <StatTile label="Lua hoje" value={`${horoscope.moonSignLabel}`} />
+      <div className="rounded-xl border border-line bg-surface p-6">
+        <div className="flex items-center justify-between mb-4">
+          <p className="font-mono-label text-xs text-ink-dim">clima cósmico de hoje</p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <WeatherStat label="Geral" value={weather.geral} color="var(--accent-2)" />
+          <WeatherStat label="Amor" value={weather.amor} color="#f06f9a" />
+          <WeatherStat label="Trabalho" value={weather.trabalho} color="var(--good)" />
+          <WeatherStat label="Saúde" value={weather.saude} color="var(--accent)" />
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-line bg-surface p-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="font-mono-label text-xs text-ink-dim mb-1">seu progresso</p>
+            <p className="font-display text-lg">Nível {level}</p>
+          </div>
+          <div className="flex gap-4 text-center">
+            <div>
+              <p className="font-display text-lg">{streak}</p>
+              <p className="text-[11px] text-ink-dim">sequência</p>
+            </div>
+            <div>
+              <p className="font-display text-lg">{stats.totalDraws}</p>
+              <p className="text-[11px] text-ink-dim">tiragens</p>
+            </div>
+            <div>
+              <p className="font-display text-lg">{xp}</p>
+              <p className="text-[11px] text-ink-dim">XP</p>
+            </div>
+          </div>
+        </div>
+        <div className="bar-track">
+          <div
+            className="bar-fill"
+            style={{ width: `${progress}%`, background: "linear-gradient(90deg, var(--accent), var(--accent-2))" }}
+          />
+        </div>
+        <p className="text-[11px] text-ink-dim mt-1.5">{xpForNext} XP para o próximo nível</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -95,15 +150,47 @@ export default async function DashboardPage() {
         </div>
         <span className="text-accent text-xl">→</span>
       </Link>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-mono-label text-xs text-ink-dim">
+            conquistas · {unlockedAchievements.length} de {ACHIEVEMENTS.length}
+          </p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {ACHIEVEMENTS.map((a) => {
+            const unlocked = a.unlocked(stats, level);
+            return (
+              <div
+                key={a.key}
+                className={`rounded-xl border p-4 text-center ${
+                  unlocked ? "border-accent bg-surface" : "border-line bg-surface opacity-50"
+                }`}
+              >
+                <p className="text-2xl mb-2">{unlocked ? a.icon : "🔒"}</p>
+                <p className="text-xs font-semibold mb-1">{a.label}</p>
+                <p className="text-[11px] text-ink-dim leading-snug">{a.description}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
+function WeatherStat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="rounded-xl border border-line bg-surface p-5">
-      <p className="font-display text-xl mb-1">{value}</p>
-      <p className="text-xs text-ink-muted">{label}</p>
+    <div>
+      <div className="bar-track mb-2">
+        <div className="bar-fill" style={{ width: `${value * 10}%`, background: color }} />
+      </div>
+      <p className="font-display text-lg" style={{ color }}>
+        {value}
+        <span className="text-xs text-ink-dim">/10</span>
+      </p>
+      <p className="text-[11px] text-ink-dim">{label}</p>
     </div>
   );
 }
+

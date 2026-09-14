@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --ground: #0c0e18;
-  --surface: #151726;
-  --surface-2: #1a1c2e;
-  --line: #2b2e48;
-  --ink: #f1f2f8;
-  --ink-muted: #aeb1c7;
-  --ink-dim: #7c7f97;
-  --accent: #8fb4ff;
-  --accent-2: #f0a868;
-  --good: #6fc79a;
+  --ground: #0a0714;
+  --surface: #14101f;
+  --surface-2: #1b1530;
+  --line: #2f2748;
+  --ink: #f3eefa;
+  --ink-muted: #b6acce;
+  --ink-dim: #786f96;
+  --accent: #a97bf0;
+  --accent-2: #f0b429;
+  --good: #5ce1c9;
   --danger: #f16565;
 }
 
@@ -23,9 +23,9 @@
     --ink: #15161f;
     --ink-muted: #5b5e70;
     --ink-dim: #8a8d9e;
-    --accent: #3457c9;
-    --accent-2: #b0631e;
-    --good: #3a7d5c;
+    --accent: #6b3fc2;
+    --accent-2: #a3690f;
+    --good: #147d69;
     --danger: #c2483f;
   }
 }
@@ -61,6 +61,37 @@ body {
   color: var(--ink);
   font-family: var(--font-body);
   line-height: 1.55;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 900px 560px at 12% -8%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 60%),
+    radial-gradient(ellipse 760px 560px at 92% 6%, color-mix(in srgb, var(--accent-2) 14%, transparent), transparent 55%);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bar-track {
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+  height: 6px;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
 }
 
 h1, h2, h3, h4 {
