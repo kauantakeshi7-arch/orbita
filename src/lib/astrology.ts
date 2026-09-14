@@ -141,6 +141,29 @@ export const ASPECT_LABELS_PT: Record<string, string> = {
   quincunx: "Quincúncio",
 };
 
+// Pontos que podem aparecer nos aspectos além dos 10 planetas principais
+// (a lib inclui corpos extras como Quíron/Sirius e os ângulos do mapa).
+const EXTRA_POINT_LABELS_PT: Record<string, string> = {
+  ascendant: "Ascendente",
+  midheaven: "Meio do Céu",
+  descendant: "Descendente",
+  ic: "Fundo do Céu",
+  chiron: "Quíron",
+  sirius: "Sírius",
+  lilith: "Lilith",
+  northnode: "Nodo Norte",
+  southnode: "Nodo Sul",
+  partoffortune: "Parte da Fortuna",
+};
+
+function labelForPoint(key: string): string {
+  return (
+    PLANET_LABELS_PT[key] ??
+    EXTRA_POINT_LABELS_PT[key] ??
+    key.charAt(0).toUpperCase() + key.slice(1)
+  );
+}
+
 const BODY_ORDER = [
   "sun",
   "moon",
@@ -176,7 +199,9 @@ export interface ChartHouse {
 
 export interface ChartAspect {
   a: string;
+  aLabel: string;
   b: string;
+  bLabel: string;
   type: string;
   typeLabel: string;
   orb: number;
@@ -309,7 +334,9 @@ export function computeNatalChart(input: BirthInput): NatalChart {
     seen.add(pairKey);
     aspects.push({
       a: asp.point1Key,
+      aLabel: labelForPoint(asp.point1Key),
       b: asp.point2Key,
+      bLabel: labelForPoint(asp.point2Key),
       type: asp.aspectKey,
       typeLabel: label,
       orb: Math.round(asp.orb * 100) / 100,

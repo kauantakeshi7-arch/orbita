@@ -95,7 +95,7 @@ export default async function MapaPage() {
               <div className="flex flex-wrap gap-2">
                 {chart.aspects.slice(0, 16).map((a, i) => (
                   <span key={i} className="text-xs rounded-full border border-line px-3 py-1 text-ink-muted">
-                    {a.a} {a.typeLabel.toLowerCase()} {a.b}
+                    {a.aLabel} {a.typeLabel.toLowerCase()} {a.bLabel}
                   </span>
                 ))}
               </div>
